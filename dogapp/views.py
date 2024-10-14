@@ -1,36 +1,22 @@
 from django.shortcuts import render
-
-# Create your views here.
 from spyne import Application, rpc, ServiceBase, Integer, Unicode
 from spyne.protocol.soap import Soap11
 from spyne.server.django import DjangoApplication
-from dogapp.models import Dog
 from django.views.decorators.csrf import csrf_exempt
-
-from rest_framework import status
-from rest_framework import serializers
+from rest_framework import generics, status, permissions, serializers, renderers
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
-from .models import Dog
-from .serializers import DogSerializer
-
-from rest_framework import status, permissions, renderers
 from rest_framework.decorators import api_view, permission_classes, renderer_classes
-
 from django.contrib.auth import authenticate
-
+from dogapp.models import Dog, Breed
+from .serializers import DogSerializer, BreedSerializer
 from .permissions import IsOwner
-from rest_framework import generics
+from .models import Dog
 
-
+# --- SOAP Service ---
 
 def authenticate_user(request):
     """
     Authenticates a user using HTTP Basic Authentication.
-
-    Returns:
-        user (User): The authenticated user object, or None if authentication fails.
-        error_response (tuple): A tuple containing the HTTP status code and message if authentication fails.
     """
     if 'HTTP_AUTHORIZATION' in request:
         auth = request['HTTP_AUTHORIZATION'].split()
@@ -44,17 +30,13 @@ def authenticate_user(request):
             except (UnicodeDecodeError, ValueError):
                 pass
 
-    # Authentication failed
     return None, (401, 'Unauthorized', {'WWW-Authenticate': 'Basic realm="DogService"'})
 
 class DogService(ServiceBase):
     @rpc(Integer, _returns=Unicode)
     def get_dog(ctx, dog_id):
         request = ctx.transport.req
-        user = None
-        
         user, error_response = authenticate_user(request)
-        # Get the Basic Auth credentials
         if user is None:
             status_code, message, headers = error_response
             ctx.transport.resp_code = status_code
@@ -70,23 +52,46 @@ class DogService(ServiceBase):
         except Dog.DoesNotExist:
             return "Dog not found."
 
-class DogSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Dog
-        fields = ['id', 'name', 'age', 'breed', 'owner']
+soap_app = Application([DogService], 'dogapp.soap',
+                       in_protocol=Soap11(validator='lxml'),
+                       out_protocol=Soap11())
+dog_service = csrf_exempt(DjangoApplication(soap_app))
 
+# --- REST API Views ---
 
-class DogDetailAPIView(generics.RetrieveAPIView):
+class DogList(generics.ListCreateAPIView):
+    """
+    Handles GET and POST requests for Dog model.
+    """
+    queryset = Dog.objects.all()
+    serializer_class = DogSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class DogDetail(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Handles GET, PUT, and DELETE requests for a specific Dog.
+    """
     queryset = Dog.objects.all()
     serializer_class = DogSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwner]
 
+class BreedList(generics.ListCreateAPIView):
+    """
+    Handles GET and POST requests for Breed model.
+    """
+    queryset = Breed.objects.all()
+    serializer_class = BreedSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-soap_app = Application([DogService], 'dogapp.soap',
-                       in_protocol=Soap11(validator='lxml'),
-                       out_protocol=Soap11())
+class BreedDetail(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Handles GET, PUT, and DELETE requests for a specific Breed.
+    """
+    queryset = Breed.objects.all()
+    serializer_class = BreedSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-dog_service = csrf_exempt(DjangoApplication(soap_app))
+# --- Example of rest_get_dog function you already have ---
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
@@ -100,3 +105,4 @@ def rest_get_dog(request, dog_id):
         return Response(serializer.data)
     except Dog.DoesNotExist:
         return Response({'error': 'Dog not found.'}, status=status.HTTP_404_NOT_FOUND)
+

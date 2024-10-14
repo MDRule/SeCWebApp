@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import views as auth_views
 
 # Import views from the dogapp for REST and SOAP endpoints
 from dogapp.views import (
