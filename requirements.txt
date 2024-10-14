@@ -1,4 +1,11 @@
 asgiref==3.8.1
+distlib==0.3.9
 Django==4.2.16
+djangorestframework==3.15.2
+filelock==3.16.1
+numpy==2.0.2
+platformdirs==4.3.6
+scipy==1.13.1
 sqlparse==0.5.1
 typing_extensions==4.12.2
+virtualenv==20.26.6
