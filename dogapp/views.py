@@ -65,7 +65,7 @@ class DogList(generics.ListCreateAPIView):
     """
     queryset = Dog.objects.all()
     serializer_class = DogSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    #permission_classes = [permissions.IsAuthenticated]
 
 class DogDetail(generics.RetrieveUpdateDestroyAPIView):
     """

@@ -7,8 +7,9 @@ class BreedSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'size', 'friendliness', 'trainability', 'sheddingamount', 'exerciseneeds']
 
 class DogSerializer(serializers.ModelSerializer):
-    breed = BreedSerializer()  # Nesting the BreedSerializer to show full breed details in the dog response
+    breed = serializers.PrimaryKeyRelatedField(queryset=Breed.objects.all())  # Use the breed ID directly
 
     class Meta:
         model = Dog
-        fields = ['id', 'name', 'age', 'breed', 'gender', 'color', 'favoritefood', 'favoritetoy']
+        fields = ['id', 'name', 'age', 'breed', 'gender', 'color', 'favoritefood', 'favoritetoy', 'owner']
+

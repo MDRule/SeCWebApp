@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.urls import path
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import views as auth_views
-
+from rest_framework.urlpatterns import format_suffix_patterns
+from dogapp import views
 # Import views from the dogapp for REST and SOAP endpoints
 from dogapp.views import (
     dog_service,
@@ -31,8 +32,15 @@ urlpatterns = [
     path('soap/dogservice/', dog_service),
 
     # REST API for Dogs
-    path('api/dogs/', DogList.as_view(), name='dog-list'),
-    path('api/dogs/<int:pk>/', DogDetail.as_view(), name='dog-detail'),
+    #path('api/dogs/', DogList.as_view(), name='dog-list'),
+    #path('api/dogs/<int:pk>/', DogDetail.as_view(), name='dog-detail'),
+    # Dog Endpoints
+    path('api/dogs/', views.DogList.as_view(), name='dog-list'),  # GET (list), POST
+    path('api/dogs/<int:pk>/', views.DogDetail.as_view(), name='dog-detail'),  # GET, PUT, DELETE
+
+    # Breed Endpoints
+    path('api/breeds/', views.BreedList.as_view(), name='breed-list'),  # GET (list), POST
+    path('api/breeds/<int:pk>/', views.BreedDetail.as_view(), name='breed-detail'),  # GET, PUT, DELETE
 
     # REST API for Breeds
     path('api/breeds/', BreedList.as_view(), name='breed-list'),
